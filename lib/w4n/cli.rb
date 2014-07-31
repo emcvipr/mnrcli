@@ -7,13 +7,11 @@ module Cli
     To get inline help, enter 'h'
 
     END
-    HELP=<<-END
-    Abcd efgh
-    TODO
-    For more help about the fra....
-    END
-    def h
-      puts HELP
+    # Abcd efgh
+    # TODO
+    # For more help about the fra....
+    def h method=:h
+      puts self.method(method.to_sym).comment.uncomment
     end
     # inline help here
     def filter string=nil
@@ -28,5 +26,6 @@ module Cli
     end
     alias :f :filter
     alias :w :write
+    #Pry::Commands.block_command "h","M&R help" do |x| puts Cli.method(x.to_sym).comment end
   end
 end
