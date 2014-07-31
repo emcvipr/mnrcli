@@ -1,10 +1,28 @@
 #!/usr/bin/env ruby
-require 'pry'
-require 'savon'
+
+class Array
+  def to_csv delimiter=';'
+    ms=map.map(&:to_h)
+    ks=ms.map(&:keys).flatten.uniq
+    h="#"+ks.join(delimiter)+"\n"
+    csv=(ms.map do |m|
+      m.values_at(*ks).join delimiter
+    end.join("\n"))
+    h+csv
+  end
+end
 
 Dir.chdir(File.dirname __FILE__)
 $:.unshift 'lib'
+
+require 'pry'
+require 'bond'
+require 'savon'
 require 'w4n/filter'
+require 'w4n/cli'
+#require 'pry/bond/default'
+#Bond.config[:readline]=Pry::BondCompleter::NoopReadline
+#Bond::M.load_file './completion.rb'
 
 class Hash
   def sym_keys
@@ -16,7 +34,6 @@ end
 options={host: 'localhost', user: 'admin', password: 'changeme'}
 options.merge!(YAML.load_file('./config.yml').sym_keys)
 
-
 [Filter].each do |c|
   c.class_eval "
     def methods
@@ -25,15 +42,10 @@ options.merge!(YAML.load_file('./config.yml').sym_keys)
   "
 end
 
-#options = {host: 'lgloz116.lss.emc.com' , user: 'admin', password: 'changeme'}
 Filter.client=Savon.client(log: options[:xml]) do |g|
   g.wsdl "http://#{options[:host]}:58080/APG-WS/wsapi/db?wsdl"
   g.basic_auth options[:user],options[:password]
   g.log false
 end
 
-Pry.config
-
-
-Pry.start nil, prompt_name: 'mnrcli'
-
+Cli.start
