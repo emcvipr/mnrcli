@@ -13,9 +13,9 @@ class Hash
     end
   end
 end
+options={host: 'localhost', user: 'admin', password: 'changeme'}
+options.merge!(YAML.load_file('./config.yml').sym_keys)
 
-options=(YAML.load_file('./config.yml') rescue {}).sym_keys
-options.merge!({host: 'localhost',user: 'admin', password: 'changeme'})
 
 [Filter].each do |c|
   c.class_eval "
