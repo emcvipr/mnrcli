@@ -3,3 +3,4 @@ Unify lib from f*unit & mnrcli
 Silent mode (aka run from cli)
 Readme
 Cleanup
+Remove boring dev-kit dependencies for Windows
