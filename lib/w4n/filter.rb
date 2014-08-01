@@ -44,9 +44,11 @@ class Filter < Set
     end
     m.join "\n"
   end
+  #Count number of metrics
   def count
     @@client.call(:get_object_count,message:create_message).xpath('//ns2:count').first.text.to_i
   end
+  #Get available properties
   def available_properties
     @@client.call(:get_available_properties,message:create_message).xpath('//ns2:property/@name').map &:value
   end
@@ -56,6 +58,7 @@ class Filter < Set
   def get_properties *props
     get_distinct(*props).map do |m| props.map do |p| m[p] end end
   end
+  #Get all the properties & there values
   def get_all
     props=available_properties
     get *props

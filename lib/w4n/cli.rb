@@ -7,9 +7,11 @@ module Cli
     To get inline help, enter 'h'
 
     END
-    # Abcd efgh
-    # TODO
-    # For more help about the fra....
+    # Configure your connection to EMC M&R Web-Service in config.yml 
+    # To query data use : f["your filter"]
+    # Available requests are :
+    #  * get_all
+    #  *
     def h method=:h
       Pry.output.puts self.method(method.to_sym).comment.uncomment
     end
