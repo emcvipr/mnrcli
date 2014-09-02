@@ -10,6 +10,10 @@ bundle
 ```
 
 #Usage
+
+Launch the console with  ```./mnrcli.rb -h <Web Server URL>```
+
+Query the data
 ```ruby
 f["parttype=='LUN'"].available_properties
 ```
@@ -38,7 +42,7 @@ Availability | VMWareCollector           | %
 
 ```
 
-Host to LUN
+Get a list of Host Disks to LUNs
 
 ```ruby
 f["(devtype='Host') & parttype='Disk'"].get_properties(:device,:partsn,:part).each do |disk|
