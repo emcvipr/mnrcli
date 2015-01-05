@@ -4,7 +4,6 @@ Dir.chdir(File.dirname __FILE__)
 $:.unshift 'lib'
 
 require 'pry'
-require 'bond'
 require 'savon'
 require 'optparse'
 require 'w4n/additions'
@@ -16,7 +15,7 @@ options.merge!(YAML.load_file('./config.yml').sym_keys)
 
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: mnrcku.rb [options]"
+  opts.banner = "Usage: mnrcli.rb [options]"
 
   opts.on("-h", "--host [hostname]", String, "Web-Server host") do |h|
     options[:host] = h

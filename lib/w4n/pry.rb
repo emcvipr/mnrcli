@@ -1,0 +1,66 @@
+require 'pry/input_completer'
+
+module Property
+  Symbol.include self
+  def values
+    filter.get_property self
+  end
+  def count
+    filter.count
+  end
+  private
+  def filter
+    Filter[self.to_s]
+  end
+end
+
+class Pry::W4NCompleter < Pry::InputCompleter
+  FILTER_METHODS=Filter.instance_methods(false).map(&:to_s)
+  PROP_METHODS=Property.instance_methods(false).map(&:to_s)
+  def call str, options={}
+    lb=@input.line_buffer
+    if ma=lb.match(/^([^"]*"[^"]*"[^"]*)*"([^"]*)$/)
+      ma[2].complete
+    elsif ma=lb.match(/"(?<filter>[^"]*)".+?get(_distinct)?.*:(?<prop>[a-z]*)$/)
+      ma['filter'].available_properties.grep(/^#{ma['prop']}/).map do |x| ":#{x}" end
+    elsif ma=lb.match(/"(?<filter>[^"]*)"\.(?<meth>[a-z]*)$/)
+      p FILTER_METHODS.grep(/^#{ma['meth']}/)
+      FILTER_METHODS.grep(/^#{ma['meth']}/).map do |x| ".#{x}" end
+    elsif ma=lb.match(/:(?<prop>[a-z]*)$/)
+      ma['prop'].complete.map do |x| ":#{x}" end
+    elsif ma=lb.match(/:[a-z]+\.(?<meth>[a-z]*)$/)
+      PROP_METHODS.grep(/^#{ma['meth']}/).map do |x| ".#{x}" end
+    else
+      super str,options
+    end
+  end
+end
+
+class String
+  DISPATCHER=[
+    /(?<prop>[a-z]+)$/, proc do |ma|
+      Filter[].available_properties.select do |p| p.match /^#{ma['prop']}/ end
+    end,
+    /(?<prop>[a-z]+)\s*==?\s*'(?<val>[^']*)$/, proc do |ma|
+      Filter["#{ma['prop']}='#{ma['val']}%'"].get_property(ma['prop'].to_sym)
+    end,
+    #/([a-z]+)\s*/,          proc do |ma| %w{= & |} end,
+    #/([a-z]+)\s*=/,         proc do |ma| %w{= '} end,
+    #/([a-z]+)\s*==/,        proc do |ma| %w{'} end,
+  ]
+  def complete
+    DISPATCHER.each_slice(2) do |p,k|
+      if ma=self.match(p)
+        return k.call(ma)
+      end
+    end
+    []
+  end
+  alias_method :_old_count,:count
+  def count x=nil
+    x ? _old_count(x) : Filter[self].count
+  end
+  def method_missing name,*args,&block
+    Filter[self].send name,*args,&block
+  end
+end

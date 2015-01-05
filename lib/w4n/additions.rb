@@ -9,7 +9,7 @@ class Array
     opts={header: nil, align_right: []}.merge options
     array=self.clone
     array.unshift opts[:header] if opts[:header]
-    max_per_row=(0..array.first.size-1).map do |i| array.map do |x| (x[i]||'').size end.max end
+    max_per_row=(0..array.first.size-1).map do |i| array.map do |x| x[i].to_s.size end.max end
     line_sep=max_per_row.map do |x| '-'*x end.join('-+-')+'-'
     format=(max_per_row[0..-2].map.with_index do |x,i|
       "%%%s%ss" % [opts[:align_right][i]?'':'-',x]

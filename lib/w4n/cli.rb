@@ -1,3 +1,5 @@
+require 'w4n/pry'
+
 module Cli
   class << self
     BANNER = <<-END
@@ -7,7 +9,7 @@ module Cli
     To get inline help, enter 'h'
 
     END
-    # Configure your connection to EMC M&R Web-Service in config.yml 
+    # Configure your connection to EMC M&R Web-Service in config.yml
     # To query data use : f["your filter"]
     # Available requests are :
     #  * get_all
@@ -21,6 +23,8 @@ module Cli
     end
     def start
       puts BANNER
+      Pry.config.should_load_plugins = false
+      Pry.config.completer = Pry::W4NCompleter
       Pry.start self,prompt_name: nil
     end
     def write filename,something
