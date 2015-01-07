@@ -28,10 +28,6 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-Filter.client=Savon.client(log: options[:xml]) do |g|
-  g.wsdl "http://#{options[:host]}:58080/APG-WS/wsapi/db?wsdl"
-  g.basic_auth options[:user],options[:password]
-  g.log false
-end
+Filter.setup options
 
 Cli.start

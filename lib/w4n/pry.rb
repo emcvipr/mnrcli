@@ -1,4 +1,5 @@
 require 'pry/input_completer'
+require 'w4n/commands'
 
 module Property
   Symbol.include self
@@ -24,7 +25,6 @@ class Pry::W4NCompleter < Pry::InputCompleter
     elsif ma=lb.match(/"(?<filter>[^"]*)".+?get(_distinct)?.*:(?<prop>[a-z]*)$/)
       ma['filter'].available_properties.grep(/^#{ma['prop']}/).map do |x| ":#{x}" end
     elsif ma=lb.match(/"(?<filter>[^"]*)"\.(?<meth>[a-z]*)$/)
-      p FILTER_METHODS.grep(/^#{ma['meth']}/)
       FILTER_METHODS.grep(/^#{ma['meth']}/).map do |x| ".#{x}" end
     elsif ma=lb.match(/:(?<prop>[a-z]*)$/)
       ma['prop'].complete.map do |x| ":#{x}" end
@@ -33,6 +33,17 @@ class Pry::W4NCompleter < Pry::InputCompleter
     else
       super str,options
     end
+  end
+end
+
+module Enumerable
+  def map_find ifnone=nil,&block
+    self.each do |*p|
+      if x=block.call(*p)
+        return x
+      end
+    end
+    ifnone
   end
 end
 
@@ -49,12 +60,9 @@ class String
     #/([a-z]+)\s*==/,        proc do |ma| %w{'} end,
   ]
   def complete
-    DISPATCHER.each_slice(2) do |p,k|
-      if ma=self.match(p)
-        return k.call(ma)
-      end
+    DISPATCHER.each_slice(2).map_find([]) do |p,b|
+      ma=self.match(p) and b.call(ma)
     end
-    []
   end
   alias_method :_old_count,:count
   def count x=nil

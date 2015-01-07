@@ -7,6 +7,7 @@ module Cli
     EMC M&R
 
     To get inline help, enter 'h'
+    The list of M&R specific commands is available via 'helpcli'
 
     END
     # Configure your connection to EMC M&R Web-Service in config.yml
@@ -25,6 +26,8 @@ module Cli
       puts BANNER
       Pry.config.should_load_plugins = false
       Pry.config.completer = Pry::W4NCompleter
+      # TODO works, make an argument
+      # Pry.start self,prompt_name: nil, input: File.open('myfile.txt')
       Pry.start self,prompt_name: nil
     end
     def write filename,something

@@ -2,27 +2,18 @@ require 'set'
 require 'w4n/machine'
 
 class Filter < Set
-  @@offset=3600
-  @@prefilter=nil
-  @@filter=nil
-  def self.client= c
-    @@client=c
+  class << self
+    attr_accessor :prefilter,:offset,:server,:filter,:client
+    def setup **options
+      self.client=Savon.client(log: options[:xml]) do |g|
+        g.wsdl "http://#{options[:host]}:58080/APG-WS/wsapi/db?wsdl"
+        g.basic_auth options[:user],options[:password]
+        g.log false
+      end
+      self.server=options[:host]
+    end
   end
-  def self.prefilter= p
-    @@prefilter=p
-  end
-  def self.set_filter s
-    @@filter=s
-  end
-  def self.reset_filter!
-    @@filter=nil
-  end
-  def self.offset
-    @@offset
-  end
-  def self.offset= v
-    @@offset=v
-  end
+  self.offset=3600
   def [] *x
     self.class.new self+x
   end
@@ -30,7 +21,7 @@ class Filter < Set
     @fs||=self.to_s.encode xml: :text
   end
   def to_s
-    self['#APG:ALL'][@@prefilter][@@filter].map(&:to_s).reject(&:empty?).inject do |x,y| "(#{x}) & (#{y})" end || ''
+    self['#APG:ALL'][self.class.prefilter][self.class.filter].map(&:to_s).reject(&:empty?).inject do |x,y| "(#{x}) & (#{y})" end || ''
   end
   def create_message **opts
     m = ["<tns:filter>#{to_filter_string}</tns:filter>"]
@@ -39,18 +30,18 @@ class Filter < Set
     end
     if opts[:ts]
       tim=Time.now.to_i
-      m << "<tns:start-timestamp>#{tim-@@offset}</tns:start-timestamp>"
-      m << "<tns:end-timestamp>#{tim+@@offset}</tns:end-timestamp>"
+      m << "<tns:start-timestamp>#{tim-self.class.offset}</tns:start-timestamp>"
+      m << "<tns:end-timestamp>#{tim+self.class.offset}</tns:end-timestamp>"
     end
     m.join "\n"
   end
   #Count number of metrics
   def count
-    @@client.call(:get_object_count,message:create_message).xpath('//ns2:count').first.text.to_i
+    self.class.client.call(:get_object_count,message:create_message).xpath('//ns2:count').first.text.to_i
   end
   #Get available properties
   def available_properties
-    @@client.call(:get_available_properties,message:create_message).xpath('//ns2:property/@name').map &:value
+    self.class.client.call(:get_available_properties,message:create_message).xpath('//ns2:property/@name').map &:value
   end
   def get_property prop
     get_distinct(prop).map(&prop)
@@ -58,22 +49,22 @@ class Filter < Set
   def get_properties *props
     get_distinct(*props).map do |m| props.map do |p| m[p] end end
   end
-  #Get all the properties & there values
+  #Get all the properties & their values
   def get_all
     props=available_properties
     get *props
   end
   def get_object_data **x
-    xml=@@client.call(:get_object_data,message:create_message(ts:true)).to_xml
+    xml=self.class.client.call(:get_object_data,message:create_message(ts:true)).to_xml
     Watch4Net::SAX::GetObjectData.parse xml,Hash#,props
   end
   def get_distinct *props
-    xml=@@client.call(:get_distinct_property_records,message:create_message(props:props)).to_xml
+    xml=self.class.client.call(:get_distinct_property_records,message:create_message(props:props)).to_xml
     Watch4Net::SAX::GetDistinctPropertyRecords.parse xml,Array,props
   end
   def get *props
     want_last_rv=props.delete :last_rv
-    xml=@@client.call(:get_object_properties,message:create_message(props:props)).to_xml
+    xml=self.class.client.call(:get_object_properties,message:create_message(props:props)).to_xml
     mets=Watch4Net::SAX::GetObjectProperties.parse xml,Array,props
     if want_last_rv
       vals=get_object_data
