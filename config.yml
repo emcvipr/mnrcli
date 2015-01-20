@@ -1,2 +1,3 @@
-host: lgloz116.lss.emc.com
+host: localhost
 user: admin
+password: changeme

@@ -10,7 +10,7 @@ require 'w4n/additions'
 require 'w4n/filter'
 require 'w4n/cli'
 
-options={host: 'localhost', user: 'admin', password: 'changeme'}
+options={host: 'localhost', user: 'admin', password: 'changeme', log: false}
 options.merge!(YAML.load_file('./config.yml').sym_keys)
 
 

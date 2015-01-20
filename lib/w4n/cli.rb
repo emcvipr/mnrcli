@@ -3,10 +3,9 @@ require 'w4n/pry'
 module Cli
   class << self
     # Configure your connection to EMC M&R Web-Service in config.yml
-    # To query data use : f["your filter"]
-    # Available requests are :
-    #  * get_all
-    #  *
+    # To query data use : "your filter"
+    # You can get filter completion with <tab>
+    # Methods arguments are symbols. To get completion use : then <tab>
     def h method=:h
       Pry.output.puts self.method(method.to_sym).comment.uncomment
     end
