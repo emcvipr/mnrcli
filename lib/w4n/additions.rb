@@ -29,15 +29,16 @@ class Array
   end
   def table *keys
     if empty?
-      return puts "No metrics"
+      return ["No metrics"]
     end
     ms=map.map(&:to_h)
     keys=ms.map(&:keys).flatten.uniq if keys.empty?
     res=ms.map do |m|
       m.values_at(*keys)
     end
-    puts res.format_table header: keys
-    puts "%d metric%s" % [size, size==1 ? '' : 's']
+    r=res.format_table header: keys
+    r<<"\n%d metric%s\n" % [size, size==1 ? '' : 's']
+    r
   end
 end
 

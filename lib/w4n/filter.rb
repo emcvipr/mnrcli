@@ -39,9 +39,9 @@ class Filter < Set
   def count
     self.class.client.call(:get_object_count,message:create_message).xpath('//ns2:count').first.text.to_i
   end
-  #Get available properties
-  def available_properties
-    self.class.client.call(:get_available_properties,message:create_message).xpath('//ns2:property/@name').map &:value
+  def available_properties **opts
+    p=opts[:description] ? proc do |p| [p[:name].to_sym,p.text] end : proc do |p| p[:name] end
+    self.class.client.call(:get_available_properties,message:create_message).xpath('//ns2:property').map &p
   end
   def get_property prop
     get_distinct(prop).map(&prop)
@@ -79,5 +79,10 @@ class Filter < Set
     self.get(*expansion,:last_rv).map do |m|
       [m.values_at(*expansion),m.value]
     end.to_h
+  end
+  def count_per *expansion
+    self.get(*expansion).each_with_object(Hash.new 0) do |m,o|
+      o[m.values_at(*expansion)]+=1
+    end
   end
 end

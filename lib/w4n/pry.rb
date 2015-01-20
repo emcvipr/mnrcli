@@ -9,6 +9,9 @@ module Property
   def count
     filter.count
   end
+  def description
+    filter.available_properties(description: true).to_h[self]
+  end
   private
   def filter
     Filter[self.to_s]
@@ -16,19 +19,22 @@ module Property
 end
 
 class Pry::W4NCompleter < Pry::InputCompleter
-  FILTER_METHODS=Filter.instance_methods(false).map(&:to_s)
-  PROP_METHODS=Property.instance_methods(false).map(&:to_s)
+  def self.meths klass
+    klass.instance_methods(false).map(&:to_s)
+  end
+  FILTER_METHODS=meths Filter
+  PROP_METHODS=meths Property
   def call str, options={}
     lb=@input.line_buffer
     if ma=lb.match(/^([^"]*"[^"]*"[^"]*)*"([^"]*)$/)
       ma[2].complete
     elsif ma=lb.match(/"(?<filter>[^"]*)".+?get(_distinct)?.*:(?<prop>[a-z]*)$/)
       ma['filter'].available_properties.grep(/^#{ma['prop']}/).map do |x| ":#{x}" end
-    elsif ma=lb.match(/"(?<filter>[^"]*)"\.(?<meth>[a-z]*)$/)
+    elsif ma=lb.match(/"(?<filter>[^"]*)"\.(?<meth>[a-z_]*)$/)
       FILTER_METHODS.grep(/^#{ma['meth']}/).map do |x| ".#{x}" end
     elsif ma=lb.match(/:(?<prop>[a-z]*)$/)
       ma['prop'].complete.map do |x| ":#{x}" end
-    elsif ma=lb.match(/:[a-z]+\.(?<meth>[a-z]*)$/)
+    elsif ma=lb.match(/:[a-z]+\.(?<meth>[a-z_]*)$/)
       PROP_METHODS.grep(/^#{ma['meth']}/).map do |x| ".#{x}" end
     else
       super str,options
@@ -65,6 +71,7 @@ class String
     end
   end
   alias_method :_old_count,:count
+  private :_old_count
   def count x=nil
     x ? _old_count(x) : Filter[self].count
   end
