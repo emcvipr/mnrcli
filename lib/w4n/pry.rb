@@ -34,8 +34,8 @@ class Pry::W4NCompleter < Pry::InputCompleter
       FILTER_METHODS.grep(/^#{ma['meth']}/).map do |x| ".#{x}" end
     elsif ma=lb.match(/:(?<prop>[a-z]*)$/)
       ma['prop'].complete.map do |x| ":#{x}" end
-    elsif ma=lb.match(/:[a-z]+\.(?<meth>[a-z_]*)$/)
-      PROP_METHODS.grep(/^#{ma['meth']}/).map do |x| ".#{x}" end
+    elsif ma=str.match(/(?<prop>:[a-z]+)\.(?<meth>[a-z_]*)$/)
+      PROP_METHODS.grep(/^#{ma['meth']}/).map do |x| "#{ma['prop']}.#{x}" end
     else
       super str,options
     end
@@ -55,12 +55,15 @@ end
 
 class String
   DISPATCHER=[
-    /(?<prop>[a-z]+)$/, proc do |ma|
-      Filter[].available_properties.select do |p| p.match /^#{ma['prop']}/ end
-    end,
     /(?<prop>[a-z]+)\s*==?\s*'(?<val>[^']*)$/, proc do |ma|
       Filter["#{ma['prop']}='#{ma['val']}%'"].get_property(ma['prop'].to_sym)
     end,
+    /(?<prop>[a-z]+)$/, proc do |ma|
+      Filter[].available_properties.select do |p| p.match /^#{ma['prop']}/ end
+    end,
+    /['a-z]*\s*$/, proc do
+      %w{& | ( )}
+    end
     #/([a-z]+)\s*/,          proc do |ma| %w{= & |} end,
     #/([a-z]+)\s*=/,         proc do |ma| %w{= '} end,
     #/([a-z]+)\s*==/,        proc do |ma| %w{'} end,

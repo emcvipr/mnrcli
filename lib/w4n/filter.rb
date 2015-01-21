@@ -40,7 +40,7 @@ class Filter < Set
     self.class.client.call(:get_object_count,message:create_message).xpath('//ns2:count').first.text.to_i
   end
   def available_properties **opts
-    p=opts[:description] ? proc do |p| [p[:name].to_sym,p.text] end : proc do |p| p[:name] end
+    p=opts[:description] ? (proc do |p| [p[:name].to_sym,p.text] end) : (proc do |p| p[:name] end)
     self.class.client.call(:get_available_properties,message:create_message).xpath('//ns2:property').map &p
   end
   def get_property prop
