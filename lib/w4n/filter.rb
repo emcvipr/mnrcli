@@ -4,13 +4,13 @@ require 'w4n/machine'
 class Filter < Set
   class << self
     attr_accessor :prefilter,:offset,:server,:filter,:client
-    def setup **options
-      self.client=Savon.client(log: options[:xml]) do |g|
-        g.wsdl "http://#{options[:host]}:58080/APG-WS/wsapi/db?wsdl"
-        g.basic_auth options[:user],options[:password]
+    def setup host: 'localhost', user: 'admin', password: 'changeme', log: false
+      self.client=Savon.client(log: log) do |g|
+        g.wsdl "http://#{host}:58080/APG-WS/wsapi/db?wsdl"
+        g.basic_auth user,password
         g.log false
       end
-      self.server=options[:host]
+      self.server=host
     end
   end
   self.offset=3600
@@ -23,12 +23,12 @@ class Filter < Set
   def to_s
     self['#APG:ALL'][self.class.prefilter][self.class.filter].map(&:to_s).reject(&:empty?).inject do |x,y| "(#{x}) & (#{y})" end || ''
   end
-  def create_message **opts
+  def create_message props: [], ts: false
     m = ["<tns:filter>#{to_filter_string}</tns:filter>"]
-    m+=(opts[:props]||[]).map do |p|
+    m+=props.map do |p|
       "<tns:property>#{p}</tns:property>"
     end
-    if opts[:ts]
+    if ts
       tim=Time.now.to_i
       m << "<tns:start-timestamp>#{tim-self.class.offset}</tns:start-timestamp>"
       m << "<tns:end-timestamp>#{tim+self.class.offset}</tns:end-timestamp>"
@@ -39,8 +39,8 @@ class Filter < Set
   def count
     self.class.client.call(:get_object_count,message:create_message).xpath('//ns2:count').first.text.to_i
   end
-  def available_properties **opts
-    p=opts[:description] ? (proc do |p| [p[:name].to_sym,p.text] end) : (proc do |p| p[:name] end)
+  def available_properties description: false
+    p=description ? (proc do |p| [p[:name].to_sym,p.text] end) : (proc do |p| p[:name] end)
     self.class.client.call(:get_available_properties,message:create_message).xpath('//ns2:property').map &p
   end
   def get_property prop
@@ -54,7 +54,7 @@ class Filter < Set
     props=available_properties
     get *props
   end
-  def get_object_data **x
+  def get_object_data
     xml=self.class.client.call(:get_object_data,message:create_message(ts:true)).to_xml
     Watch4Net::SAX::GetObjectData.parse xml,Hash#,props
   end

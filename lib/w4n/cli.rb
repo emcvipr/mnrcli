@@ -23,11 +23,13 @@ module Cli
       The list of M&R specific commands is available via 'helpcli'
 
       END
-      Pry.config.should_load_plugins = false
-      Pry.config.completer = Pry::W4NCompleter
-      # TODO works, make an argument
-      # Pry.start self,prompt_name: nil, input: File.open('myfile.txt')
-      Pry.start self,prompt_name: nil
+      conf={
+        should_load_plugins: false,
+        completer: Pry::W4NCompleter,
+        prompt_name: nil,
+        #input: File.open('myfile.txt'),
+      }
+      Pry.start self,**conf
     end
     alias :f :filter
   end

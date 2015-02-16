@@ -5,17 +5,16 @@ class String
 end
 
 class Array
-  def format_table **options
-    opts={header: nil, align_right: []}.merge options
+  def format_table header: nil, align_right: []
     array=self.clone
-    array.unshift opts[:header] if opts[:header]
+    array.unshift header if header
     max_per_row=(0..array.first.size-1).map do |i| array.map do |x| x[i].to_s.size end.max end
     line_sep=max_per_row.map do |x| '-'*x end.join('-+-')+'-'
     format=(max_per_row[0..-2].map.with_index do |x,i|
-      "%%%s%ss" % [opts[:align_right][i]?'':'-',x]
+      "%%%s%ss" % [align_right[i]?'':'-',x]
     end.push "%s").join ' | '
     res=array.map do |x| format % x end
-    (opts[:header] ? [0,2,-1] : [0,-1]).each do |x| res.insert x,line_sep end
+    (header ? [0,2,-1] : [0,-1]).each do |x| res.insert x,line_sep end
     res.join "\n"
   end
   def to_csv delimiter=';'

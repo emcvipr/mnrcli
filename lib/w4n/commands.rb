@@ -6,11 +6,11 @@ module Pry::Command::W4N
     Pry::Commands.add_command klass
   end
   module Helpers
-    def pr *x,**opts
+    def pr *x, file: nil
       s=x.join "\n"
-      if f=opts[:file]
-        File.write f,s
-        output.puts "Output written to #{f}"
+      if file
+        File.write file,s
+        _pry_.output.puts "Output written to #{file}"
       else
         _pry_.pager.page s
       end
@@ -34,7 +34,7 @@ module Pry::Command::W4N
     description "connect to a different db"
     command_options argument_required: true
     def process host,user='admin',pass='changeme'
-      Filter.setup xml: false, user: user, password: pass, host: host
+      Filter.setup log: false, user: user, password: pass, host: host
     end
   end
   new_command do
@@ -189,6 +189,35 @@ module Pry::Command::W4N
     def process
       g=Filter.client.globals
       [:pretty_print_xml,:log].each do |p| g[p]=!g[p] end
+    end
+  end
+  new_command do
+    match 'load_file'
+    command_options argument_required: true
+    def process file
+      _pry_.output.puts "\n"
+      _pry_.input=File.open file
+    end
+  end
+  new_command do
+    match 'output'
+    def options opt
+      opt.on :c, :color, "keep color in the output"
+      opt.on :s, :stdout, "display the output back on stdout"
+    end
+    def process file
+      p=_pry_
+      if opts[:s]
+        p.output=STDOUT
+        p.color=true
+      else
+        unless opts[:c]
+          p.color=false
+        end
+        raise Pry::CommandError,"must specify a file" unless file
+        p.output=File.open file,'w'
+        p.pager=nil
+      end
     end
   end
 end

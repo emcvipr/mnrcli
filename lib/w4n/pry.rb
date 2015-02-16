@@ -53,7 +53,8 @@ module Enumerable
   end
 end
 
-class String
+module StringAdditions
+  String.prepend self
   DISPATCHER=[
     /(?<prop>[a-z]+)\s*==?\s*'(?<val>[^']*)$/, proc do |ma|
       Filter["#{ma['prop']}='#{ma['val']}%'"].get_property(ma['prop'].to_sym)
@@ -73,10 +74,8 @@ class String
       ma=self.match(p) and b.call(ma)
     end
   end
-  alias_method :_old_count,:count
-  private :_old_count
   def count x=nil
-    x ? _old_count(x) : Filter[self].count
+    x ? super(x) : Filter[self].count
   end
   def method_missing name,*args,&block
     Filter[self].send name,*args,&block
