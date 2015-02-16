@@ -26,6 +26,9 @@ OptionParser.new do |opts|
   opts.on("-p", "--password [*****]", String, "Web-Service password") do |p|
     options[:password] = p
   end
+  opts.on("-l", "--log", "Log XML requests") do |l|
+    options[:log] = true
+  end
 end.parse!
 
 Filter.setup options

@@ -8,8 +8,8 @@ class Filter < Set
       self.client=Savon.client(log: log) do |g|
         g.wsdl "http://#{host}:58080/APG-WS/wsapi/db?wsdl"
         g.basic_auth user,password
-        g.log false
-      end
+        g.log log
+     end
       self.server=host
     end
   end
