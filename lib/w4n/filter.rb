@@ -4,12 +4,13 @@ require 'w4n/machine'
 class Filter < Set
   class << self
     attr_accessor :prefilter,:offset,:server,:filter,:client
-    def setup host: 'localhost', user: 'admin', password: 'changeme', log: false
-      self.client=Savon.client(log: log) do |g|
-        g.wsdl "http://#{host}:58080/APG-WS/wsapi/db?wsdl"
-        g.basic_auth user,password
-        g.log log
-     end
+    def setup host: 'localhost', user: 'admin', password: 'changeme', log: false, timeout: 120
+      self.client=Savon.client(
+        log: log,
+        wsdl: "http://#{host}:58080/APG-WS/wsapi/db?wsdl",
+        basic_auth: [user,password],
+        read_timeout: timeout,
+      )
       self.server=host
     end
   end
