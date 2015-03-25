@@ -68,7 +68,7 @@ class Filter < Set
     opts=[:last_rv,:last_ts,:last_human_ts].each_with_object({}) do |k,o| o[k]=props.delete(k) end
     xml=self.class.client.call(:get_object_properties,message:create_message(props:props)).to_xml
     mets=Watch4Net::SAX::GetObjectProperties.parse xml,Array,props
-    if opts[:last_rv] or opts[:last_ts] or opts[:last_ts]
+    if opts[:last_rv] or opts[:last_ts] or opts[:last_human_ts]
       vals=get_object_data
       mets.each do |m|
         v=vals[m.id]

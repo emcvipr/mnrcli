@@ -63,4 +63,3 @@ You can configure web-service connectivity in ```config.yml```
 #Contributing
 fork it, use it, break it, fix it, upgrade it...
 
-
