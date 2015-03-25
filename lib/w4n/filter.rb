@@ -27,6 +27,7 @@ class Filter < Set
   def create_message props: [], ts: false
     m = ["<tns:filter>#{to_filter_string}</tns:filter>"]
     m+=props.map do |p|
+      raise ArgumentError,"#{p.to_s.inspect}: wrong property format" unless /^[a-z0-9]{1,8}$/.match p
       "<tns:property>#{p}</tns:property>"
     end
     if ts
@@ -64,14 +65,23 @@ class Filter < Set
     Watch4Net::SAX::GetDistinctPropertyRecords.parse xml,Array,props
   end
   def get *props
-    want_last_rv=props.delete :last_rv
+    opts=[:last_rv,:last_ts,:last_human_ts].each_with_object({}) do |k,o| o[k]=props.delete(k) end
     xml=self.class.client.call(:get_object_properties,message:create_message(props:props)).to_xml
     mets=Watch4Net::SAX::GetObjectProperties.parse xml,Array,props
-    if want_last_rv
+    if opts[:last_rv] or opts[:last_ts] or opts[:last_ts]
       vals=get_object_data
       mets.each do |m|
         v=vals[m.id]
-        m.value=v ? v.last : nil
+        if opts[:last_rv]
+          m.value=v[1].last
+        end
+        if opts[:last_ts]
+          m.timestamp=v[0].last
+        end
+        if opts[:last_human_ts]
+          x=v[0].last
+          m.human_timestamp=(x.nil? ? nil : Time.at(x).strftime("%a, %b %e %Y %H:%M:%S %z"))
+        end
       end
     end
     mets

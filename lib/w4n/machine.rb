@@ -19,13 +19,15 @@ module Watch4Net
           attrs.each do |(a,v)|
             if 'id'.eql? a
               @id=v
-              @ret[@id]=[]
+              @ret[@id]=[[],[]]
             end
           end
         elsif 'ns2:tv'.eql? name
           attrs.each do |(a,v)|
             if 'v'.eql? a
-              @ret[@id] << v.to_f
+              @ret[@id][1] << v.to_f
+            elsif 't'.eql? a
+              @ret[@id][0] << v.to_i
             end
           end
         end
