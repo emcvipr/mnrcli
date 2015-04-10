@@ -19,6 +19,9 @@ module Watch4Net
     def values_at *x
       @table.values_at *x
     end
+    def delete_field name
+       @table.delete name.to_sym
+    end
   end
   unless Array.instance_methods.include? :to_h
     class ::Array

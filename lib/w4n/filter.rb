@@ -14,6 +14,7 @@ class Filter < Set
       self.server=host
     end
   end
+  #Change the default range with: Filter.offset=XYZ
   self.offset=3600
   def [] *x
     self.class.new self+x
@@ -24,16 +25,17 @@ class Filter < Set
   def to_s
     self['#APG:ALL'][self.class.prefilter][self.class.filter].map(&:to_s).reject(&:empty?).inject do |x,y| "(#{x}) & (#{y})" end || ''
   end
-  def create_message props: [], ts: false
+  def create_message props: [], ts: false, offset: nil
     m = ["<tns:filter>#{to_filter_string}</tns:filter>"]
     m+=props.map do |p|
       raise ArgumentError,"#{p.to_s.inspect}: wrong property format" unless /^[a-z0-9]{1,8}$/.match p
       "<tns:property>#{p}</tns:property>"
     end
     if ts
+      offset||=self.class.offset
       tim=Time.now.to_i
-      m << "<tns:start-timestamp>#{tim-self.class.offset}</tns:start-timestamp>"
-      m << "<tns:end-timestamp>#{tim+self.class.offset}</tns:end-timestamp>"
+      m << "<tns:start-timestamp>#{tim-offset}</tns:start-timestamp>"
+      m << "<tns:end-timestamp>#{tim+offset}</tns:end-timestamp>"
     end
     m.join "\n"
   end
@@ -56,38 +58,58 @@ class Filter < Set
     props=available_properties
     get *props
   end
-  def get_object_data
-    xml=self.class.client.call(:get_object_data,message:create_message(ts:true)).to_xml
-    Watch4Net::SAX::GetObjectData.parse xml,Hash#,props
+  def get_object_data period=nil
+    xml=self.class.client.call(:get_object_data,message:create_message(ts:true, offset: period)).to_xml
+    Watch4Net::SAX::GetObjectData.parse xml,Hash
   end
   def get_distinct *props
     xml=self.class.client.call(:get_distinct_property_records,message:create_message(props:props)).to_xml
     Watch4Net::SAX::GetDistinctPropertyRecords.parse xml,Array,props
   end
-  def get *props
-    opts=[:last_rv,:last_ts,:last_human_ts].each_with_object({}) do |k,o| o[k]=props.delete(k) end
+  #Get metrics and its properties and/or values
+  # options :
+  # * any property name as a symbol
+  # * value ; last raw value
+  # * timestamp & human_timestamp for the value
+  # * all_values: true ; will display all the values for the time range between now & offset or now & period
+  # * period ; takes precedence on Filter.offset
+  def get *props, all_values: false, period: nil
+    depr={
+      last_rv: :value,
+      last_ts: :timestamp,
+      last_human_ts: :human_timestamp,
+    }
+    opts=[:id,:value,:timestamp,:human_timestamp].concat(depr.keys).each_with_object({}) do |k,o| o[k]=props.delete(k) end
+    depr.select do |k,_| opts[k] end.each do |k,v|
+      STDERR.puts "OPTION %s IS DEPRECATED, PLEASE USE %s INSTEAD" % [k,v].map(&:inspect)
+      opts[v]=opts.delete k
+    end
     xml=self.class.client.call(:get_object_properties,message:create_message(props:props)).to_xml
     mets=Watch4Net::SAX::GetObjectProperties.parse xml,Array,props
-    if opts[:last_rv] or opts[:last_ts] or opts[:last_human_ts]
-      vals=get_object_data
-      mets.each do |m|
-        v=vals[m.id]
-        if opts[:last_rv]
-          m.value=v[1].last
+    if opts[:value] or opts[:timestamp] or opts[:human_timestamp]
+      vals=get_object_data(period)
+      mets.map! do |m|
+        v=(x=vals[m.id] ; x[0].zip x[1])
+        v.empty? ? m : (all_values ? v : v.slice(-1,1)).map do |z|
+          nm=m.clone
+          if opts[:value]
+            nm.value=z[1]
+          end
+          if opts[:timestamp]
+            nm.timestamp=z[0]
+          end
+          if opts[:human_timestamp]
+            nm.human_timestamp=(z[0].nil? ? nil : Time.at(z[0]).strftime("%a, %b %e %Y %H:%M:%S %z"))
+          end
+          nm
         end
-        if opts[:last_ts]
-          m.timestamp=v[0].last
-        end
-        if opts[:last_human_ts]
-          x=v[0].last
-          m.human_timestamp=(x.nil? ? nil : Time.at(x).strftime("%a, %b %e %Y %H:%M:%S %z"))
-        end
-      end
+      end.flatten!
     end
+    mets.each do |m| m.delete_field :id end unless opts[:id]
     mets
   end
   def value_per *expansion
-    self.get(*expansion,:last_rv).map do |m|
+    self.get(*expansion,:value).map do |m|
       [m.values_at(*expansion),m.value]
     end.to_h
   end

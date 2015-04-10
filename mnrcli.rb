@@ -4,6 +4,7 @@ Dir.chdir(File.dirname __FILE__)
 $:.unshift 'lib'
 
 require 'pry'
+require 'yaml'
 require 'savon'
 require 'optparse'
 require 'w4n/additions'

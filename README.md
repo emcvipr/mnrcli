@@ -13,20 +13,14 @@ bundle
 
 Launch the console with  ```./mnrcli.rb -h <Web Server URL>```
 
-Query the data
+Play with properties
 ```ruby
-f["parttype=='LUN'"].available_properties
-```
-
-Write your results to a file
-
-```
-write "myfile.txt",filter["!name"].get_all.to_csv
+"parttype=='LUN'".available_properties
 ```
 
 
 ```
-(Cli)> puts f["name=='Availability'"].get_distinct(:name,:source,:unit).table
+(Cli)> puts "name=='Availability'".get_distinct(:name,:source,:unit).table
 -------------+---------------------------+------
 name         | source                    | unit
 -------------+---------------------------+------
@@ -50,9 +44,34 @@ f["(devtype='Host') & parttype='Disk'"].get_properties(:device,:partsn,:part).ea
 end
 ```
 
+Play with timeseries values
+```
+(Cli)> puts "parttype='LUN' & name='ResponseTime'&partsn='60060160000000000000000000000000'".get(:device,:part,:partsn,:value).table
+---------------------------------+-----------------------+---------+-------
+partsn                           | part                  | device  | value
+---------------------------------+-----------------------+---------+-------
+60060160000000000000000000000000 | LOGICAL UNIT NUMBER 0 | VNX0000 | 0.0
+---------------------------------+-----------------------+---------+------
+```
+
+```
+puts "parttype='LUN' & name='ResponseTime'&partsn='60060160000000000000000000000000'".get(:device,:part,:partsn,:value,:timestamp,:human_timestamp,all_values:true, period:8640000).first(5).table
+---------------------------------+-----------------------+---------+-------+------------+---------------------------------
+partsn                           | part                  | device  | value | timestamp  | human_timestamp
+---------------------------------+-----------------------+---------+-------+------------+---------------------------------
+60060160000000000000000000000000 | LOGICAL UNIT NUMBER 8 | VNX1582 | 0.0   | 1420200033 | Fri, Jan  2 2015 07:00:33 -0500
+60060160000000000000000000000000 | LOGICAL UNIT NUMBER 8 | VNX1582 | 0.0   | 1420200331 | Fri, Jan  2 2015 07:05:31 -0500
+60060160000000000000000000000000 | LOGICAL UNIT NUMBER 8 | VNX1582 | 0.0   | 1420200635 | Fri, Jan  2 2015 07:10:35 -0500
+60060160000000000000000000000000 | LOGICAL UNIT NUMBER 8 | VNX1582 | 0.0   | 1420200934 | Fri, Jan  2 2015 07:15:34 -0500
+60060160000000000000000000000000 | LOGICAL UNIT NUMBER 8 | VNX1582 | 0.0   | 1420201231 | Fri, Jan  2 2015 07:20:31 -0500
+---------------------------------+-----------------------+---------+-------+------------+---------------------------------
+5 metrics
+```
+
+
 Show documentation and help
 ```ruby
-show-doc f.get_all
+show-doc f.get
 h
 ```
 
@@ -62,4 +81,5 @@ You can configure web-service connectivity in ```config.yml```
 
 #Contributing
 fork it, use it, break it, fix it, upgrade it...
+
 
