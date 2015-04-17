@@ -4,6 +4,12 @@ class String
   end
 end
 
+class Date
+  def self.yesterday
+    self.today.prev_day
+  end
+end
+
 class Array
   def format_table header: nil, align_right: []
     array=self.clone

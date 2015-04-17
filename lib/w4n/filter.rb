@@ -2,8 +2,47 @@ require 'set'
 require 'w4n/machine'
 
 class Filter < Set
+  module TimeRange
+    attr_reader :offset,:from,:until
+    def offset= x
+      @offset,@from,@until=x,nil,nil
+    end
+    def from= x
+      @until||=nil
+      @from,@offset=x,nil
+    end
+    def until= x
+      @from||=nil
+      @until,@offset=x,nil
+    end
+    def reset_range
+      @offset,@from,@until=nil,nil,nil
+    end
+    def current_range offset: nil, from: nil, **opts
+      # until is a reserved keyword, local var could be obtained with:
+      #   til=binding.local_variable_get(:until)
+      # but we support 2.0, so we have to use **opts :'(
+      til=opts.delete(:until)||@until
+      raise ArgumentError,sprintf("unknown keyword%s: %s",(opts.size==1?'':'s'),opts.keys.join(', ')) unless opts.empty?
+      raise ArgumentError,"offset and from/until are mutually exclusive" if offset and (from or til)
+      offset||=@offset||3600
+      from||=@from
+      if from
+        til||= Time.now+3600
+        [to_ts(from),to_ts(til)]
+      else
+        tim=Time.now.to_i
+        [tim-offset,tim+3600]
+      end
+    end
+    private
+    def to_ts x
+      Date===x ? x.to_time.to_i : x.to_i
+    end
+  end
   class << self
-    attr_accessor :prefilter,:offset,:server,:filter,:client
+    include TimeRange
+    attr_accessor :prefilter,:server,:filter,:client
     def setup host: 'localhost', user: 'admin', password: 'changeme', log: false, timeout: 120
       self.client=Savon.client(
         log: log,
@@ -14,8 +53,6 @@ class Filter < Set
       self.server=host
     end
   end
-  #Change the default range with: Filter.offset=XYZ
-  self.offset=3600
   def [] *x
     self.class.new self+x
   end
@@ -25,17 +62,16 @@ class Filter < Set
   def to_s
     self['#APG:ALL'][self.class.prefilter][self.class.filter].map(&:to_s).reject(&:empty?).inject do |x,y| "(#{x}) & (#{y})" end || ''
   end
-  def create_message props: [], ts: false, offset: nil
+  def create_message props: [], ts: false, **options
     m = ["<tns:filter>#{to_filter_string}</tns:filter>"]
     m+=props.map do |p|
       raise ArgumentError,"#{p.to_s.inspect}: wrong property format" unless /^[a-z0-9]{1,8}$/.match p
       "<tns:property>#{p}</tns:property>"
     end
     if ts
-      offset||=self.class.offset
-      tim=Time.now.to_i
-      m << "<tns:start-timestamp>#{tim-offset}</tns:start-timestamp>"
-      m << "<tns:end-timestamp>#{tim+offset}</tns:end-timestamp>"
+      start_time,end_time=self.class.current_range **options
+      m << "<tns:start-timestamp>#{start_time}</tns:start-timestamp>"
+      m << "<tns:end-timestamp>#{end_time}</tns:end-timestamp>"
     end
     m.join "\n"
   end
@@ -58,8 +94,8 @@ class Filter < Set
     props=available_properties
     get *props
   end
-  def get_object_data period=nil
-    xml=self.class.client.call(:get_object_data,message:create_message(ts:true, offset: period)).to_xml
+  def get_object_data **options
+    xml=self.class.client.call(:get_object_data,message:create_message(ts:true, **options)).to_xml
     Watch4Net::SAX::GetObjectData.parse xml,Hash
   end
   def get_distinct *props
@@ -70,10 +106,15 @@ class Filter < Set
   # options :
   # * any property name as a symbol
   # * value ; last raw value
-  # * timestamp & human_timestamp for the value
-  # * all_values: true ; will display all the values for the time range between now & offset or now & period
-  # * period ; takes precedence on Filter.offset
-  def get *props, all_values: false, period: nil
+  # * timestamp & human_timestamp for the unix time of values, or a formatted one
+  # * all_values: true ; will display all the values in the time range
+  # * offset: n ; will look for values until n seconds in the past
+  # * from: t ; look for values from that moment onwards
+  # * until: t ; look for values until that time (default: now)
+  # (from and offset are incompatible, from & until accept Date, Time or unix timestamp)
+  # ex: "!parttype & source='abcd'".get(:device,:devtype,:name,:value,all_values: true, from: Date.new(2001,1,28))
+  def get *props, **options
+    all_values=options.delete :all_values
     depr={
       last_rv: :value,
       last_ts: :timestamp,
@@ -87,7 +128,7 @@ class Filter < Set
     xml=self.class.client.call(:get_object_properties,message:create_message(props:props)).to_xml
     mets=Watch4Net::SAX::GetObjectProperties.parse xml,Array,props
     if opts[:value] or opts[:timestamp] or opts[:human_timestamp]
-      vals=get_object_data(period)
+      vals=get_object_data(options)
       mets.map! do |m|
         v=(x=vals[m.id] ; x[0].zip x[1])
         v.empty? ? m : (all_values ? v : v.slice(-1,1)).map do |z|

@@ -55,7 +55,7 @@ partsn                           | part                  | device  | value
 ```
 
 ```
-puts "parttype='LUN' & name='ResponseTime'&partsn='60060160000000000000000000000000'".get(:device,:part,:partsn,:value,:timestamp,:human_timestamp,all_values:true, period:8640000).first(5).table
+puts "parttype='LUN' & name='ResponseTime'&partsn='60060160000000000000000000000000'".get(:device,:part,:partsn,:value,:timestamp,:human_timestamp,all_values:true, offset:8640000).first(5).table
 ---------------------------------+-----------------------+---------+-------+------------+---------------------------------
 partsn                           | part                  | device  | value | timestamp  | human_timestamp
 ---------------------------------+-----------------------+---------+-------+------------+---------------------------------
@@ -68,6 +68,23 @@ partsn                           | part                  | device  | value | tim
 5 metrics
 ```
 
+```
+(Cli)> puts "myfilter".get(:human_timestamp, all_values:true, from:Date.today).table
+--------------------------------
+human_timestamp
+--------------------------------
+Fri, Apr 17 2015 00:13:04 -0400
+Fri, Apr 17 2015 00:28:11 -0400
+Fri, Apr 17 2015 00:43:17 -0400
+Fri, Apr 17 2015 00:58:06 -0400
+Fri, Apr 17 2015 01:28:16 -0400
+Fri, Apr 17 2015 01:43:04 -0400
+Fri, Apr 17 2015 01:58:09 -0400
+Fri, Apr 17 2015 02:13:23 -0400
+Fri, Apr 17 2015 02:28:05 -0400
+Fri, Apr 17 2015 02:58:20 -0400
+[...]
+```
 
 Show documentation and help
 ```ruby
