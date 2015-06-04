@@ -43,12 +43,14 @@ class Filter < Set
   class << self
     include TimeRange
     attr_accessor :prefilter,:server,:filter,:client
-    def setup host: 'localhost', user: 'admin', password: 'changeme', log: false, timeout: 120
+    def setup host: 'localhost', user: 'admin', password: 'changeme', log: nil, timeout: 120
+      log=self.client.globals[:log] if log.nil? and self.client
       self.client=Savon.client(
         log: log,
         wsdl: "http://#{host}:58080/APG-WS/wsapi/db?wsdl",
         basic_auth: [user,password],
         read_timeout: timeout,
+        pretty_print_xml: log,
       )
       self.server=host
     end

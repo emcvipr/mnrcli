@@ -3,6 +3,7 @@
 Dir.chdir(File.dirname __FILE__)
 $:.unshift 'lib'
 
+require 'w4n/pre'
 require 'pry'
 require 'yaml'
 require 'savon'
@@ -11,9 +12,8 @@ require 'w4n/additions'
 require 'w4n/filter'
 require 'w4n/cli'
 
-options={host: 'localhost', user: 'admin', password: 'changeme', log: false}
+options={host: 'localhost', user: 'admin', password: 'changeme', log: false, file: nil}
 options.merge!(YAML.load_file('./config.yml').sym_keys)
-
 
 OptionParser.new do |opts|
   opts.banner = "Usage: mnrcli.rb [options]"
@@ -30,8 +30,11 @@ OptionParser.new do |opts|
   opts.on("-l", "--log", "Log XML requests") do |l|
     options[:log] = true
   end
+  opts.on("-f", "--file [file]",String,"Read commands from file") do |f|
+    options[:file] = f
+  end
 end.parse!
 
-Filter.setup options
+Filter.setup options.slice :host,:user,:password,:log
 
-Cli.start
+Cli.start file: options[:file]
