@@ -36,7 +36,7 @@ module Watch4Net
     class GetDistinctPropertyRecords < Nokogiri::XML::SAX::Document
       extend Parser
       def initialize o,props
-        @props,@in_value,@vals,@l=props,false,[],o
+        @props,@in_value,@vals,@str,@l=props,false,[],[],o
       end
       def start_element name,attrs=[]
         @in_value='ns2:value'.eql? name
@@ -45,16 +45,19 @@ module Watch4Net
         if 'ns2:record'.eql? name
           @l << Metric.new(@props.zip @vals)
           @vals=[]
+        elsif 'ns2:value'.eql? name
+          @vals << @str.join('')
+          @str=[]
         end
       end
       def characters str
-        @vals << str if @in_value
+        @str << str if @in_value
       end
     end
     class GetObjectProperties < Nokogiri::XML::SAX::Document
       extend Parser
       def initialize o,props
-        @props,@l,@h,@pname=props,o,{},nil
+        @props,@l,@h,@str,@pname=props,o,{},[],nil
       end
       def start_element name,attrs=[]
         if 'ns2:value'.eql? name
@@ -67,10 +70,13 @@ module Watch4Net
         if 'ns2:properties'.eql? name
           @l << Metric.new(@h)
           @h={}
+        elsif 'ns2:value'.eql? name
+          @h[@pname]=@str.join('')
+          @str=[]
         end
       end
       def characters str
-        @h[@pname]=str
+        @str << str
       end
     end
   end
