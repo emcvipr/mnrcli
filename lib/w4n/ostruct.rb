@@ -23,13 +23,4 @@ module Watch4Net
        @table.delete name.to_sym
     end
   end
-  unless Array.instance_methods.include? :to_h
-    class ::Array
-      def to_h
-        each_with_object({}) do |(k,v),o|
-          o[k]=v
-        end
-      end
-    end
-  end
 end

@@ -53,4 +53,7 @@ class Hash
       o[k.to_sym]=v
     end
   end
+  def slice *keys
+    keys.each_with_object({}) do |k,o| o[k]=self[k] if self.key? k end
+  end
 end

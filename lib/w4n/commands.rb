@@ -34,7 +34,7 @@ module Pry::Command::W4N
     description "connect to a different db"
     command_options argument_required: true
     def process host,user='admin',pass='changeme'
-      Filter.setup log: false, user: user, password: pass, host: host
+      Filter.setup user: user, password: pass, host: host
     end
   end
   new_command do
@@ -106,6 +106,7 @@ module Pry::Command::W4N
       wnt,dnw=prop_parse(p)
       props=wnt.empty? ? f.available_properties.map(&:to_sym) : wnt
       props-=dnw
+      props << :id
       mets=filter.get(*props)
       mets.each do |m|
         o << text.bright_blue(m.id)

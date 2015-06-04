@@ -13,7 +13,7 @@ module Cli
     def filter string=nil
       string ? Filter[string] : Filter[]
     end
-    def start
+    def start file: nil
       Pry.output.puts <<-END.gsub /^ {6}/,''
 
         EMC M&R on #{Filter.server}
@@ -27,8 +27,8 @@ module Cli
         should_load_plugins: false,
         completer: Pry::W4NCompleter,
         prompt_name: nil,
-        #input: File.open('myfile.txt'),
       }
+      conf[:input]=File.open(file) if file
       Pry.start self,**conf
     end
     alias :f :filter
