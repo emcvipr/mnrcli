@@ -49,6 +49,8 @@ class Filter < Set
         log: log,
         wsdl: "http://#{host}:58080/APG-WS/wsapi/db?wsdl",
         basic_auth: [user,password],
+        follow_redirects: true,
+        ssl_verify_mode: :none,
         read_timeout: timeout,
         pretty_print_xml: log,
       )
